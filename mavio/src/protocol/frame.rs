@@ -383,9 +383,9 @@ impl<V: MaybeVersioned> Frame<V> {
         MavFrame::new(self)
     }
 
-    /// Decodes frame into a message of particular MAVLink dialect.
+    /// Decodes the frame into a message of a particular MAVLink dialect.
     ///
-    /// Performs [`Frame::checksum`] validation before returning decoded message.
+    /// Performs [`Frame::checksum`] validation before returning the decoded message.
     ///
     /// # Usage
     ///
@@ -406,26 +406,33 @@ impl<V: MaybeVersioned> Frame<V> {
     /// #         .message(&Heartbeat::default()).unwrap()
     /// #         .build();
     ///
-    /// // Decode the frame within `minimal` dialect and match result over available dialect messages
+    /// // Decode the frame within `minimal` dialect and match the result over available dialect messages
     /// match frame.decode().unwrap() {
-    ///     Minimal::ProtocolVersion(_) => {}
-    ///     Minimal::Heartbeat(_) => {}
+    ///     Minimal::Heartbeat(message) => {
+    ///         /* process heartbeat message */
+    ///     }
+    ///     _ => unreachable!()
     /// }
     /// # }
     /// ```
     ///
+    /// This function is useful when you are expecting to receive any message withing a particular
+    /// dialect into an option of the dialect enum (such as [Minimal](crate::dialects::Minimal)).
+    /// This introduces a slight memory overhead due to the way how Rust enums are stored. If
+    /// instead, you want to decode a particular message directly, use [`Frame::decode_message`].
+    ///
     /// # Errors
     ///
     /// * Returns [`FrameError::Checksum`] if checksum validation failed.
-    /// * Returns [`Error::Spec`] if frame can't be correctly decoded to the provided
+    /// * Returns [`Error::Spec`] if the frame can't be correctly decoded to the provided
     ///   [`Dialect`] (generic type argument).
     ///
     /// # Links
     ///
+    /// * [`Frame::decode_message`] decodes the frame into a particular message directly.
     /// * [`Frame::validate_checksum_with_crc_extra`] performs checksum validation.
     /// * [`SpecError`] contains errors related to MAVLink dialect specification and message
     ///   encoding/decoding.
-    /// * [`Frame::decode`]
     #[inline]
     pub fn decode<D: Dialect>(&self) -> Result<D> {
         let message = D::decode(self.payload()).map_err(Error::from)?;
@@ -433,18 +440,18 @@ impl<V: MaybeVersioned> Frame<V> {
         Ok(message)
     }
 
-    /// Decodes frame into a particular MAVLink message.
+    /// Decodes the frame into a particular MAVLink message.
     ///
-    /// Performs [`Frame::checksum`] validation before returning decoded message.
+    /// Performs [`Frame::checksum`] validation before returning the decoded message.
     ///
     /// # Usage
     ///
     /// ```rust,no_run
     /// # #[cfg(feature = "dlct-minimal")] {
-    /// # use minimal::messages::Heartbeat;
     /// # use mavio::protocol::{V2};
-    /// use mavio::dialects::minimal::messages::Heartbeat;
+    /// use mavio::dialects::minimal;
     /// use mavio::Frame;
+    /// use minimal::messages::Heartbeat;
     ///
     /// let frame = // ... obtain a frame
     /// #     Frame::builder()
@@ -465,17 +472,21 @@ impl<V: MaybeVersioned> Frame<V> {
     /// # }
     /// ```
     ///
+    /// This function is useful when you know exactly what message you want to decode. You may also
+    /// want to consider using [`Frame::decode`] that decodes any valid message into a dialect enum.
+    ///
     /// # Errors
     ///
     /// * Returns [`FrameError::Checksum`] if checksum validation failed.
-    /// * Returns [`Error::Spec`] if frame can't be correctly decoded to the desired messaage.
+    /// * Returns [`Error::Spec`] if the frame can't be correctly decoded to the desired message.
     ///
     /// # Links
     ///
+    /// * [`Frame::decode`] decodes the frame into a message as on option of the particular dialect
+    ///   enum.
     /// * [`Frame::validate_checksum_with_crc_extra`] performs checksum validation.
     /// * [`SpecError`] contains errors related to MAVLink dialect specification and message
     ///   encoding/decoding.
-    /// * [`Frame::decode_message`]
     #[inline]
     pub fn decode_message<
         'a,
