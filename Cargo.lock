@@ -599,9 +599,9 @@ dependencies = [
 
 [[package]]
 name = "mavlink-dialects"
-version = "0.6.6"
+version = "0.6.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1e8f4d3c3f70676b2d652dc3f14f24263edd8a57244dbd08daad744d39979268"
+checksum = "e02745a8b6011107f9cf5297c22965daf10b9cc256f1d013aca7cdf74ee92957"
 dependencies = [
  "document-features",
  "mavinspect",
@@ -617,9 +617,9 @@ dependencies = [
 
 [[package]]
 name = "mavlink-message-definitions"
-version = "0.6.6"
+version = "0.6.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "03b9393304beeb8d9e79a976f43af915df17273eda0ae3b1e265211a94cb5a26"
+checksum = "4cd1cb4479078235889e8b0bd759d77431d1f716b00071ae1c204fa1a6568553"
 dependencies = [
  "document-features",
  "lazy_static",
@@ -630,9 +630,9 @@ dependencies = [
 
 [[package]]
 name = "mavspec"
-version = "0.6.6"
+version = "0.6.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bc1e9d61cfacb854759e4ba722085c301e47ee9f88dd388462501c366d5d7667"
+checksum = "2a127bf6d6814cf59db4ecefdc98fb1bea1d46b2846790da040db12bc82b5ba8"
 dependencies = [
  "document-features",
  "format_no_std",
@@ -650,9 +650,9 @@ dependencies = [
 
 [[package]]
 name = "mavspec_rust_derive"
-version = "0.6.6"
+version = "0.6.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "af101bc1467cfbf472bc2590d95026a6decbeb632ecb2bd0395d05a0edcfe0d4"
+checksum = "5bfda4d3f06d25bab94337cd3bd77169ea6ab8bcc4c8e9cacf93d6c93b214c2a"
 dependencies = [
  "crc-any",
  "heck",
@@ -664,9 +664,9 @@ dependencies = [
 
 [[package]]
 name = "mavspec_rust_gen"
-version = "0.6.6"
+version = "0.6.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0eee9a66620f26dc24d58b5bf492998eb63c3555f20ae3c552b8787c8c317e76"
+checksum = "6d4469a891ee1bb16d4ba4e54e9db2bcdcf0a4479e1ac89f3e8970108d607acf"
 dependencies = [
  "cargo-manifest",
  "heck",
@@ -682,9 +682,9 @@ dependencies = [
 
 [[package]]
 name = "mavspec_rust_spec"
-version = "0.6.6"
+version = "0.6.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c456c80e2db7798119a51383469e8dc4bc0b1d28815d4e6d7f8b5a57a9c49f91"
+checksum = "5dba3884b048fbfcff412db49f5fa93329d6fe52702312fa9759bf512702e182"
 dependencies = [
  "bitflags",
  "serde",
