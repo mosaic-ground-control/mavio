@@ -433,6 +433,61 @@ impl<V: MaybeVersioned> Frame<V> {
         Ok(message)
     }
 
+    /// Decodes frame into a particular MAVLink message.
+    ///
+    /// Performs [`Frame::checksum`] validation before returning decoded message.
+    ///
+    /// # Usage
+    ///
+    /// ```rust,no_run
+    /// # #[cfg(feature = "dlct-minimal")] {
+    /// # use minimal::messages::Heartbeat;
+    /// # use mavio::protocol::{V2};
+    /// use mavio::dialects::minimal::messages::Heartbeat;
+    /// use mavio::Frame;
+    ///
+    /// let frame = // ... obtain a frame
+    /// #     Frame::builder()
+    /// #         .sequence(0)
+    /// #         .system_id(1)
+    /// #         .component_id(1)
+    /// #         .version(V2)
+    /// #         .message(&Heartbeat::default()).unwrap()
+    /// #         .build();
+    ///
+    /// // Decode the frame into a specific type based on its `ID`
+    /// match frame.message_id() {
+    ///     Heartbeat::ID => {
+    ///         let message = frame.decode_message::<Heartbeat>().unwrap();
+    ///     }
+    ///     _ => unreachable!()
+    /// }
+    /// # }
+    /// ```
+    ///
+    /// # Errors
+    ///
+    /// * Returns [`FrameError::Checksum`] if checksum validation failed.
+    /// * Returns [`Error::Spec`] if frame can't be correctly decoded to the desired messaage.
+    ///
+    /// # Links
+    ///
+    /// * [`Frame::validate_checksum_with_crc_extra`] performs checksum validation.
+    /// * [`SpecError`] contains errors related to MAVLink dialect specification and message
+    ///   encoding/decoding.
+    /// * [`Frame::decode_message`]
+    #[inline]
+    pub fn decode_message<
+        'a,
+        M: mavspec::rust::spec::MessageSpecStatic + TryFrom<&'a Payload, Error = SpecError>,
+    >(
+        &'a self,
+    ) -> Result<M> {
+        self.validate_checksum_with_crc_extra(M::crc_extra())?;
+        let message = M::try_from(self.payload()).map_err(Error::from)?;
+        Ok(message)
+    }
+
     /// Upgrades a frame in-place to `MAVLink 2` protocol version using provided `CRC_EXTRA`.
     ///
     /// The opposite is not possible since we need to know exact payload length.
