@@ -57,7 +57,7 @@ pub use endpoint::Endpoint;
 pub use flags::{CompatFlags, IncompatFlags};
 pub use frame::Frame;
 pub use frame_builder::FrameBuilder;
-pub use header::{Header, HeaderBytes};
+pub use header::Header;
 pub use header_builder::HeaderBuilder;
 pub use marker::{MaybeVersioned, Unset, Versioned, Versionless, V1, V2};
 pub use mav_frame::MavFrame;

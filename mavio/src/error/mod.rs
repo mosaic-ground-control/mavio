@@ -82,7 +82,7 @@ pub enum Error {
 
 /// Errors related to MAVLink frame validation.
 ///
-/// This means, that frame is already present but hasn't passed certain criteria.
+/// This means that the frame is already present but hasn't passed certain criteria.
 #[derive(Clone, Debug)]
 #[cfg_attr(all(feature = "specta", feature = "unstable"), derive(specta::Type))]
 #[cfg_attr(
@@ -104,9 +104,23 @@ pub enum FrameError {
     /// required flag set.
     #[cfg_attr(feature = "std", error("invalid incompat flags: {0:?}"))]
     Incompatible(IncompatFlagsError),
-    /// MAVLink message with specified ID is not in dialect.
+    /// MAVLink message with the specified ID is not in dialect.
     #[cfg_attr(feature = "std", error("message with ID {0:?} is not in dialect"))]
     NotInDialect(MessageId),
+    /// MAVLink frame can't be process due to a small buffer.
+    #[cfg_attr(
+        feature = "std",
+        error("the frame buffer is too small, expecting: {expected} bytes, actual: {actual}")
+    )]
+    FrameBufferIsTooSmall {
+        /// Expected size
+        expected: usize,
+        /// Actual size
+        actual: usize,
+    },
+    /// Invalid MAVLink header.
+    #[cfg_attr(feature = "std", error("invalid MAVLink header"))]
+    InvalidHeader,
 }
 
 /// Invalid MAVLink version.

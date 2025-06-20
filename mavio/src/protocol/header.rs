@@ -1,6 +1,6 @@
 //! # MAVLink header
 //!
-//! This module contains implementation for MAVLink packet header both for `MAVLink 1` and
+//! This module contains an implementation for MAVLink packet header both for `MAVLink 1` and
 //! `MAVLink 2` protocol versions.
 
 use core::marker::PhantomData;
@@ -28,10 +28,10 @@ use crate::prelude::*;
 /// # Versioned and versionless headers
 ///
 /// In most cases, you are going to receive a [`Versionless`] header. However, if you want to work
-/// in a context of a specific MAVLink protocol version, you can convert header into a [`Versioned`]
-/// variant by calling [`Header::try_into_versioned`].
+/// in the context of a specific MAVLink protocol version, you can convert a header into a
+/// [`Versioned`] variant by calling [`Header::try_into_versioned`].
 ///
-/// You always can forget about header's version by calling [`Header::into_versionless`].
+/// You always can forget about the header's version by calling [`Header::into_versionless`].
 ///
 /// # Links
 ///
@@ -50,40 +50,6 @@ pub struct Header<V: MaybeVersioned> {
     pub(super) component_id: ComponentId,
     pub(super) message_id: MessageId,
     pub(super) _marker_version: PhantomData<V>,
-}
-
-/// Represents [`Header`] encoded as a sequence of bytes.
-#[derive(Clone, Copy, Debug, Default)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct HeaderBytes {
-    buffer: [u8; HEADER_MAX_SIZE],
-    size: usize,
-}
-
-impl HeaderBytes {
-    /// Encoded [`Header`] as a slice of bytes.
-    ///
-    /// The length of a slice matches [`Self::size`] and therefore [`Header::size`].
-    pub fn as_slice(&self) -> &[u8] {
-        &self.buffer[0..self.size]
-    }
-
-    /// Size of the encoded [`Header`] in bytes.
-    pub fn size(&self) -> usize {
-        self.size
-    }
-
-    /// Encoded [`Header`] CRC data.
-    ///
-    /// Returns all header data excluding `magic` byte.
-    ///
-    /// See:
-    ///  * [`MavLinkFrame::calculate_crc`](crate::protocol::Frame::calculate_crc).
-    ///  * [MAVLink checksum](https://mavlink.io/en/guide/serialization.html#checksum) in MAVLink
-    ///    protocol documentation.
-    pub fn crc_data(&self) -> &[u8] {
-        &self.buffer[1..self.size()]
-    }
 }
 
 impl<V: MaybeVersioned> Header<V> {
@@ -115,9 +81,9 @@ impl<V: MaybeVersioned> Header<V> {
 
     /// System `ID`.
     ///
-    /// `ID` of system (vehicle) sending the message. Used to differentiate systems on network.
+    /// `ID` of the system (vehicle) sending the message. Used to differentiate systems on a network.
     ///
-    /// > Note that the broadcast address 0 may not be used in this field as it is an invalid source
+    /// > Note that broadcast address 0 may not be used in this field as it is an invalid source
     /// > address.
     #[inline]
     pub fn system_id(&self) -> SystemId {
@@ -126,8 +92,8 @@ impl<V: MaybeVersioned> Header<V> {
 
     /// Component `ID`.
     ///
-    /// `ID` of component sending the message. Used to differentiate components in a system (e.g.
-    /// autopilot and a camera). Use appropriate values in
+    /// `ID` of the component sending the message. Used to differentiate components in a system
+    /// (e.g., autopilot and a camera). Use appropriate values in
     /// [MAV_COMPONENT](https://mavlink.io/en/messages/common.html#MAV_COMPONENT).
     ///
     /// > Note that the broadcast address `MAV_COMP_ID_ALL` may not be used in this field as it is
@@ -139,7 +105,7 @@ impl<V: MaybeVersioned> Header<V> {
 
     /// Message `ID`.
     ///
-    /// `ID` of MAVLink message. Defines how payload will be encoded and decoded.
+    /// `ID` of MAVLink message. Defines how the payload will be encoded and decoded.
     #[inline]
     pub fn message_id(&self) -> MessageId {
         self.message_id
@@ -163,7 +129,7 @@ impl<V: MaybeVersioned> Header<V> {
     ///
     /// # Links
     ///
-    /// * [Frame::signature](crate::protocol::Frame::signature).
+    /// * [Frame::signature](Frame::signature).
     pub fn is_signed(&self) -> bool {
         match self.version {
             MavLinkVersion::V1 => false,
@@ -184,11 +150,13 @@ impl<V: MaybeVersioned> Header<V> {
 
     /// MAVLink frame body length.
     ///
-    /// Calculates expected size in bytes for frame body. Depends on MAVLink protocol version and presence of
-    /// signature (when [`IncompatFlags::MAVLINK_IFLAG_SIGNED`] incompatibility flag is set).
+    /// Calculates expected size in bytes for the frame body. Depends on MAVLink protocol version
+    /// and presence of signature (when [`IncompatFlags::MAVLINK_IFLAG_SIGNED`] incompatibility flag
+    /// is set).
     ///
     /// # Links
-    /// * [`Frame::signature`](crate::protocol::Frame::signature).
+    ///
+    /// * [`Frame::signature`](Frame::signature).
     pub fn body_length(&self) -> usize {
         match self.version {
             MavLinkVersion::V1 => self.payload_length as usize + CHECKSUM_SIZE,
@@ -202,21 +170,9 @@ impl<V: MaybeVersioned> Header<V> {
         }
     }
 
-    /// Decodes [`Header`] as [`HeaderBytes`].
+    /// Attempts to transform an existing header into its versioned form.
     ///
-    /// Returns header data encoded as a sequence of bytes.
-    pub fn decode(&self) -> HeaderBytes {
-        let mut header_bytes = HeaderBytes {
-            size: self.size(),
-            ..Default::default()
-        };
-        self.dump_bytes(&mut header_bytes);
-        header_bytes
-    }
-
-    /// Attempts to transform existing header into its versioned form.
-    ///
-    /// This method never changes the internal MAVLink protocol version. It will return an error,
+    /// This method never changes the internal MAVLink protocol version. It will return an error
     /// if conversion is not possible.
     pub fn try_into_versioned<Version: MaybeVersioned>(
         self,
@@ -236,9 +192,9 @@ impl<V: MaybeVersioned> Header<V> {
         })
     }
 
-    /// Attempts to create header with specified version from existing one.
+    /// Attempts to create a header with a specified version from the existing one.
     ///
-    /// This method never changes the internal MAVLink protocol version. It will return an error,
+    /// This method never changes the internal MAVLink protocol version. It will return an error
     /// if conversion is not possible.
     pub fn try_to_versioned<Version: MaybeVersioned>(
         &self,
@@ -246,7 +202,7 @@ impl<V: MaybeVersioned> Header<V> {
         self.clone().try_into_versioned()
     }
 
-    /// Forget about header's version transforming it into a [`Versionless`] variant.
+    /// Forget about the header's version transforming it into a [`Versionless`] variant.
     pub fn into_versionless(self) -> Header<Versionless> {
         Header {
             version: self.version,
@@ -270,7 +226,7 @@ impl<V: MaybeVersioned> Header<V> {
         &self,
         writer: &mut W,
     ) -> core::result::Result<usize, E> {
-        writer.write_all(self.decode().as_slice())?;
+        writer.write_all(self.serialize().as_slice())?;
         Ok(self.size())
     }
 
@@ -278,7 +234,7 @@ impl<V: MaybeVersioned> Header<V> {
         &self,
         writer: &mut W,
     ) -> core::result::Result<usize, E> {
-        writer.write_all(self.decode().as_slice()).await?;
+        writer.write_all(self.serialize().as_slice()).await?;
         Ok(self.size())
     }
 
@@ -313,6 +269,33 @@ impl<V: MaybeVersioned> Header<V> {
 }
 
 impl<V: MaybeVersioned> Header<V> {
+    pub(super) fn serialize(&self) -> HeaderBytes {
+        let mut header_bytes = HeaderBytes {
+            size: self.size(),
+            ..Default::default()
+        };
+        self.dump_bytes(&mut header_bytes);
+        header_bytes
+    }
+
+    pub(super) fn deserialize(buf: &[u8]) -> core::result::Result<Header<V>, FrameError> {
+        if buf.len() < HEADER_MIN_SIZE {
+            return Err(FrameError::InvalidHeader);
+        }
+
+        let header_length = match MavSTX::from(buf[0]) {
+            MavSTX::V1 => HEADER_V1_SIZE,
+            MavSTX::V2 => HEADER_V2_SIZE,
+            MavSTX::Unknown(_) => return Err(FrameError::InvalidHeader),
+        };
+
+        if buf.len() < header_length {
+            return Err(FrameError::InvalidHeader);
+        }
+
+        Ok(unsafe { Header::<V>::try_from_slice_unchecked(&buf[0..header_length]) })
+    }
+
     pub(super) fn recv<E: Into<Error>, R: Read<E>>(
         reader: &mut R,
     ) -> core::result::Result<Header<V>, E> {
@@ -325,7 +308,7 @@ impl<V: MaybeVersioned> Header<V> {
                     reader.read_exact(header_start.remaining_bytes_mut())?;
                 }
                 return Ok(unsafe {
-                    Header::<V>::try_from_slice_unchecked(header_start.header_bytes())
+                    Header::<V>::try_from_slice_unchecked(header_start.as_slice_unchecked())
                 });
             } else {
                 continue;
@@ -347,7 +330,7 @@ impl<V: MaybeVersioned> Header<V> {
                         .await?;
                 }
                 return Ok(unsafe {
-                    Header::<V>::try_from_slice_unchecked(header_start.header_bytes())
+                    Header::<V>::try_from_slice_unchecked(header_start.as_slice_unchecked())
                 });
             } else {
                 continue;
@@ -355,7 +338,7 @@ impl<V: MaybeVersioned> Header<V> {
         }
     }
 
-    // This function does not use unsafe Rust but may panic if first byte is not STX or provided
+    // This function does not use unsafe Rust but may panic if the first byte is not STX or provided
     // slice has invalid size.
     unsafe fn try_from_slice_unchecked(bytes: &[u8]) -> Header<V> {
         let reader = TBytesReader::from(bytes);
@@ -435,8 +418,8 @@ impl<V: Versioned> Header<V> {
 impl Header<V2> {
     /// Incompatibility flags for `MAVLink 2` header.
     ///
-    /// Flags that must be understood for MAVLink compatibility (implementation discards packet if
-    /// it does not understand flag).
+    /// Flags that must be understood for MAVLink compatibility (implementation discards a packet if
+    /// it does not understand a flag).
     ///
     /// See: [MAVLink 2 incompatibility flags](https://mavlink.io/en/guide/serialization.html#incompat_flags).
     #[inline]
@@ -446,8 +429,8 @@ impl Header<V2> {
 
     /// Compatibility flags for `MAVLink 2` header.
     ///
-    /// Flags that can be ignored if not understood (implementation can still handle packet even if
-    /// it does not understand flag).
+    /// Flags that can be ignored if not understood (implementation can still handle a packet even
+    /// if it does not understand a flag).
     ///
     /// See: [MAVLink 2 compatibility flags](https://mavlink.io/en/guide/serialization.html#compat_flags).
     #[inline]
@@ -459,7 +442,7 @@ impl Header<V2> {
 impl Header<Versionless> {
     /// Initiates builder for [`Header`].
     ///
-    /// Instead of constructor we use
+    /// Instead of constructor, we use
     /// [builder](https://rust-unofficial.github.io/patterns/patterns/creational/builder.html)
     /// pattern. An instance of [`HeaderBuilder`] returned by this function is initialized
     /// with default values. Once desired values are set, you can call [`HeaderBuilder::build`]
@@ -470,8 +453,8 @@ impl Header<Versionless> {
 
     /// Incompatibility flags for `MAVLink 2` header.
     ///
-    /// Flags that must be understood for MAVLink compatibility (implementation discards packet if
-    /// it does not understand flag).
+    /// Flags that must be understood for MAVLink compatibility (implementation discards a packet if
+    /// it does not understand a flag).
     ///
     /// See: [MAVLink 2 incompatibility flags](https://mavlink.io/en/guide/serialization.html#incompat_flags).
     #[inline]
@@ -484,8 +467,8 @@ impl Header<Versionless> {
 
     /// Compatibility flags for `MAVLink 2` header.
     ///
-    /// Flags that can be ignored if not understood (implementation can still handle packet even if
-    /// it does not understand flag).
+    /// Flags that can be ignored if not understood (implementation can still handle a packet even
+    /// if it does not understand a flag).
     ///
     /// See: [MAVLink 2 compatibility flags](https://mavlink.io/en/guide/serialization.html#compat_flags).
     #[inline]
@@ -497,6 +480,7 @@ impl Header<Versionless> {
     }
 }
 
+/// Represents a potentially incomplete start of MAVLink header as a sequence of bytes.
 struct HeaderStart<V: MaybeVersioned> {
     buffer: [u8; HEADER_MAX_SIZE],
     n_bytes_read: usize,
@@ -505,16 +489,21 @@ struct HeaderStart<V: MaybeVersioned> {
 }
 
 impl<V: MaybeVersioned> HeaderStart<V> {
+    /// Read header byres sequence from a byte slice.
     fn from_slice(buffer: &[u8]) -> Option<Self> {
-        let mut mavlink_version: Option<MavLinkVersion> = None;
-        let mut header_start_idx = buffer.len();
-        for (i, &byte) in buffer.iter().enumerate() {
-            if V::is_magic_byte(byte) {
-                header_start_idx = i;
-                mavlink_version = MavSTX::from(byte).into();
-                break;
+        let (mavlink_version, header_start_idx) = {
+            let mut mavlink_version: Option<MavLinkVersion> = None;
+            let mut header_start_idx = buffer.len();
+            for (i, &byte) in buffer.iter().enumerate() {
+                if V::is_magic_byte(byte) {
+                    header_start_idx = i;
+                    mavlink_version = MavSTX::from(byte).into();
+                    break;
+                }
             }
-        }
+
+            (mavlink_version, header_start_idx)
+        };
 
         match mavlink_version {
             None => None,
@@ -524,48 +513,86 @@ impl<V: MaybeVersioned> HeaderStart<V> {
                     MavLinkVersion::V2 => HEADER_V2_SIZE,
                 };
 
-                let n_bytes_read = buffer.len() - header_start_idx;
-                let header_start_bytes = &buffer[header_start_idx..buffer.len()];
+                let n_bytes_to_read = core::cmp::min(buffer.len() - header_start_idx, header_size);
+                let header_start_bytes =
+                    &buffer[header_start_idx..header_start_idx + n_bytes_to_read];
 
                 let mut header_bytes = [0u8; HEADER_MAX_SIZE];
-                header_bytes[0..n_bytes_read].copy_from_slice(header_start_bytes);
+                header_bytes[0..n_bytes_to_read].copy_from_slice(header_start_bytes);
 
                 Some(Self {
                     buffer: header_bytes,
-                    n_bytes_read,
-                    n_bytes_left: header_size - n_bytes_read,
+                    n_bytes_read: n_bytes_to_read,
+                    n_bytes_left: header_size - n_bytes_to_read,
                     _marker_version: PhantomData,
                 })
             }
         }
     }
 
-    fn header_bytes(&self) -> &[u8] {
+    /// Header bytes as a slice.
+    ///
+    /// This function does not check the header sequence for completeness.
+    unsafe fn as_slice_unchecked(&self) -> &[u8] {
         &self.buffer[0..self.n_bytes_read + self.n_bytes_left]
     }
 
+    /// Returns `true` if header is complete.
     fn is_complete(&self) -> bool {
         self.n_bytes_left == 0
     }
 
+    /// Mutable slice pointing to the remaining bytes that should be read to complete the header.
     fn remaining_bytes_mut(&mut self) -> &mut [u8] {
         &mut self.buffer[self.n_bytes_read..self.n_bytes_read + self.n_bytes_left]
     }
 }
 
+/// Represents [`Header`] encoded as a sequence of bytes.
+#[derive(Clone, Copy, Debug, Default)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub(super) struct HeaderBytes {
+    buffer: [u8; HEADER_MAX_SIZE],
+    size: usize,
+}
+
+impl HeaderBytes {
+    /// Encoded [`Header`] as a slice of bytes.
+    ///
+    /// The length of a slice matches [`Self::size`] and therefore [`Header::size`].
+    pub(super) fn as_slice(&self) -> &[u8] {
+        &self.buffer[0..self.size]
+    }
+
+    /// Size of the encoded [`Header`] in bytes.
+    pub(super) fn size(&self) -> usize {
+        self.size
+    }
+
+    /// Encoded [`Header`] CRC data.
+    ///
+    /// Returns all header data excluding `magic` byte.
+    ///
+    /// See:
+    ///  * [`MavLinkFrame::calculate_crc`](Frame::calculate_crc).
+    ///  * [MAVLink checksum](https://mavlink.io/en/guide/serialization.html#checksum) in MAVLink
+    ///    protocol documentation.
+    pub(super) fn crc_data(&self) -> &[u8] {
+        &self.buffer[1..self.size()]
+    }
+}
+
 #[cfg(test)]
 mod header_tests {
+    use super::*;
+
     #[cfg(feature = "std")]
     use std::io::Cursor;
 
-    #[cfg(feature = "std")]
     use crate::consts::{STX_V1, STX_V2};
+
     #[cfg(feature = "std")]
     use crate::io::StdIoReader;
-
-    use crate::protocol::V1;
-
-    use super::*;
 
     #[test]
     #[cfg(feature = "std")]
@@ -708,5 +735,124 @@ mod header_tests {
         assert_eq!(header.system_id(), 10);
         assert_eq!(header.component_id(), 240);
         assert_eq!(header.message_id(), 42);
+    }
+
+    #[test]
+    fn serialize_deserialize_v1_test() {
+        let sequence = [
+            STX_V1, // magic byte
+            8,      // payload_length
+            1,      // sequence
+            10,     // system ID
+            255,    // component ID
+            42,     // message ID
+            41,     // \
+            41,     //  | Anything
+            41,     // /
+        ];
+        let header_bytes = &sequence[0..HEADER_V1_SIZE];
+
+        // Deserialize from the exact sequence
+        let header: Header<V1> = Header::deserialize(&header_bytes).unwrap();
+        assert_eq!(header.payload_length(), 8);
+        assert_eq!(header.component_id(), 255);
+        assert_eq!(header.message_id(), 42);
+
+        // Serialize header
+        let serialized = header.serialize();
+        assert_eq!(serialized.as_slice(), header_bytes);
+
+        // Deserialize from a sequence with extra bytes
+        let header: Header<V1> = Header::deserialize(&sequence).unwrap();
+        let serialized = header.serialize();
+        assert_eq!(serialized.as_slice(), header_bytes);
+
+        // Deserialize from an incomplete sequence
+        assert!(matches!(
+            Header::<V1>::deserialize(&header_bytes[0..header_bytes.len() - 2]),
+            Err(FrameError::InvalidHeader)
+        ));
+    }
+
+    #[test]
+    fn serialize_deserialize_v2_test() {
+        let sequence = [
+            STX_V2, // magic byte
+            8,      // payload_length
+            1,      // incompatibility flags
+            0,      // compatibility flags
+            42,     // sequence
+            10,     // system ID
+            255,    // component ID
+            2,      // \
+            1,      //  | message ID
+            0,      // /
+        ];
+        let header_bytes = &sequence[0..HEADER_V2_SIZE];
+
+        // Deserialize from the exact sequence
+        let header: Header<V2> = Header::deserialize(&header_bytes).unwrap();
+        assert_eq!(header.payload_length(), 8);
+        assert_eq!(header.component_id(), 255);
+        assert_eq!(header.message_id(), 258);
+
+        // Serialize header
+        let serialized = header.serialize();
+        assert_eq!(serialized.as_slice(), header_bytes);
+
+        // Deserialize from a sequence with extra bytes
+        let header: Header<V2> = Header::deserialize(&sequence).unwrap();
+        let serialized = header.serialize();
+        assert_eq!(serialized.as_slice(), header_bytes);
+
+        // Deserialize from an incomplete sequence
+        assert!(matches!(
+            Header::<V2>::deserialize(&header_bytes[0..header_bytes.len() - 2]),
+            Err(FrameError::InvalidHeader)
+        ));
+    }
+
+    #[test]
+    fn header_start_v2_test() {
+        let v2_sequence = [
+            STX_V2, // magic byte
+            8,      // payload_length
+            1,      // incompatibility flags
+            0,      // compatibility flags
+            42,     // sequence
+            10,     // system ID
+            255,    // component ID
+            2,      // \
+            1,      //  | message ID
+            0,      // /
+            41,     // \
+            41,     //  | Anything
+            41,     // /
+        ];
+
+        // Complete header sequence
+        let header_start = HeaderStart::<V2>::from_slice(&v2_sequence).unwrap();
+        assert!(header_start.is_complete());
+
+        let header: Header<V2> =
+            Header::deserialize(unsafe { header_start.as_slice_unchecked() }).unwrap();
+        assert_eq!(header.payload_length(), 8);
+        assert_eq!(header.component_id(), 255);
+        assert_eq!(header.message_id(), 258);
+
+        // Incomplete header sequence
+        let mut header_start = HeaderStart::<V2>::from_slice(&v2_sequence[0..5]).unwrap();
+        assert!(!header_start.is_complete());
+
+        let n_bytes_left = header_start.n_bytes_left;
+        header_start
+            .remaining_bytes_mut()
+            .copy_from_slice(&v2_sequence[5..5 + n_bytes_left]);
+
+        let header: Header<V2> =
+            Header::deserialize(unsafe { header_start.as_slice_unchecked() }).unwrap();
+        assert_eq!(header.payload_length(), 8);
+        assert_eq!(header.component_id(), 255);
+        assert_eq!(header.message_id(), 258);
     }
 }

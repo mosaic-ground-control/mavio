@@ -111,7 +111,7 @@ impl<'a> Signer<'a> {
     /// `key`.
     ///
     /// This method has a blanked implementation which does not require changing, unless you want
-    /// to completely change signing protocol.
+    /// to completely change the signing protocol.
     pub fn calculate<V: MaybeVersioned>(
         &mut self,
         frame: &Frame<V>,
@@ -122,7 +122,7 @@ impl<'a> Signer<'a> {
         self.0.reset();
 
         self.0.digest(key.value());
-        self.0.digest(frame.header().decode().as_slice());
+        self.0.digest(frame.header().serialize().as_slice());
         self.0.digest(frame.payload().bytes());
         self.0.digest(&frame.checksum().to_le_bytes());
         self.0.digest(&[link_id]);
