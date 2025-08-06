@@ -11,7 +11,7 @@ use crate::consts::{
     SIGNATURE_LENGTH,
 };
 use crate::error::VersionError;
-use crate::io::{AsyncRead, AsyncWrite, Read, Write};
+use crate::io::{AsyncRead, Read};
 use crate::protocol::marker::{HasCompId, HasMsgId, HasPayloadLen, HasSysId, Sequenced, Unset};
 use crate::protocol::{
     CompatFlags, ComponentId, HeaderBuilder, IncompatFlags, MavSTX, MaybeVersioned, PayloadLength,
@@ -220,22 +220,6 @@ impl<V: MaybeVersioned> Header<V> {
     /// Create a [`Versionless`] header from the existing one.
     pub fn to_versionless(&self) -> Header<Versionless> {
         self.clone().into_versionless()
-    }
-
-    pub(super) fn send<E: Into<Error>, W: Write<E>>(
-        &self,
-        writer: &mut W,
-    ) -> core::result::Result<usize, E> {
-        writer.write_all(self.serialize().as_slice())?;
-        Ok(self.size())
-    }
-
-    pub(super) async fn send_async<E: Into<Error>, W: AsyncWrite<E>>(
-        &self,
-        writer: &mut W,
-    ) -> core::result::Result<usize, E> {
-        writer.write_all(self.serialize().as_slice()).await?;
-        Ok(self.size())
     }
 
     fn dump_bytes(&self, header_bytes: &mut HeaderBytes) {

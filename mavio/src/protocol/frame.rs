@@ -640,36 +640,56 @@ impl<V: MaybeVersioned> Frame<V> {
         &self,
         writer: &mut W,
     ) -> core::result::Result<usize, E> {
-        let header_bytes_sent = self.header.send(writer)?;
+        let header_size = self.header.size();
+        let total_size = header_size + self.body_length();
 
         #[cfg(not(feature = "alloc"))]
-        let mut buf = [0u8; crate::consts::PAYLOAD_MAX_SIZE + SIGNATURE_LENGTH];
+        let mut buf = [0u8; crate::consts::PAYLOAD_MAX_SIZE + SIGNATURE_LENGTH + crate::consts::HEADER_MAX_SIZE];
+
         #[cfg(feature = "alloc")]
-        let mut buf = alloc::vec![0u8; self.body_length()];
-        let body_bytes = &mut buf[..self.body_length()];
+        let mut buf = alloc::vec![0u8; total_size];
 
-        self.fill_body_buffer(body_bytes);
-        writer.write_all(body_bytes)?;
+        let header_slice = &mut buf[..header_size];
+        header_slice.copy_from_slice(self.header.serialize().as_slice());
 
-        Ok(header_bytes_sent + self.body_length())
+        let body_start = header_size;
+        let body_end = body_start + self.body_length();
+        let body_slice = &mut buf[body_start..body_end];
+        self.fill_body_buffer(body_slice);
+
+        // Write the complete buffer
+        let write_size = header_size + self.body_length();
+        writer.write_all(&buf[..write_size])?;
+
+        Ok(write_size)
     }
 
     pub(crate) async fn send_async<E: Into<Error>, W: AsyncWrite<E>>(
         &self,
         writer: &mut W,
     ) -> core::result::Result<usize, E> {
-        let header_bytes_sent = self.header.send_async(writer).await?;
+        let header_size = self.header.size();
+        let total_size = header_size + self.body_length();
 
         #[cfg(not(feature = "alloc"))]
-        let mut buf = [0u8; crate::consts::PAYLOAD_MAX_SIZE + SIGNATURE_LENGTH];
+        let mut buf = [0u8; crate::consts::PAYLOAD_MAX_SIZE + SIGNATURE_LENGTH + crate::consts::HEADER_MAX_SIZE];
+
         #[cfg(feature = "alloc")]
-        let mut buf = alloc::vec![0u8; self.body_length()];
-        let body_bytes = &mut buf[..self.body_length()];
+        let mut buf = alloc::vec![0u8; total_size];
 
-        self.fill_body_buffer(body_bytes);
-        writer.write_all(body_bytes).await?;
+        let header_slice = &mut buf[..header_size];
+        header_slice.copy_from_slice(self.header.serialize().as_slice());
 
-        Ok(header_bytes_sent + self.body_length())
+        let body_start = header_size;
+        let body_end = body_start + self.body_length();
+        let body_slice = &mut buf[body_start..body_end];
+        self.fill_body_buffer(body_slice);
+
+        // Write the complete buffer
+        let write_size = header_size + self.body_length();
+        writer.write_all(&buf[..write_size]).await?;
+
+        Ok(write_size)
     }
 
     fn fill_body_buffer(&self, buf: &mut [u8]) {
